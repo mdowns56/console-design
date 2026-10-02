@@ -1,0 +1,782 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Louvered Media Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a workshop viewer. 3D model left, spec sheet right; controls sit under the model. Single dark look to match the office. */
+:root {
+  --bg: #0f1215;
+  --panel: #161a1e;
+  --line: #273038;
+  --fg: #e4e8ea;
+  --muted: #8f999f;
+  --accent: #6fd0da;
+  --walnut: #9a6a48;
+  --font-display: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.wrap {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding-inline: 20px;
+  padding-block: 20px 40px;
+  display: grid;
+  gap: 18px;
+}
+header { display: grid; gap: 4px; }
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(24px, 3.2vw, 34px);
+  letter-spacing: .01em;
+  text-wrap: balance;
+}
+.sub { margin: 0; color: var(--muted); max-width: 70ch; }
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 960px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+.stage {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.viewer {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  max-width: 100%;
+  min-height: 300px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #0b0d0f;
+}
+.viewer canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.hint {
+  position: absolute;
+  left: 12px; bottom: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  pointer-events: none;
+}
+.status {
+  position: absolute;
+  right: 12px; top: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: var(--fg);
+  background: rgba(15,18,21,.72);
+  border: 1px solid var(--line);
+  padding: 4px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+.fallback {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  color: var(--muted); padding: 24px; text-align: center;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+@media (max-width: 640px) { .controls { grid-template-columns: minmax(0, 1fr); } }
+.group { display: grid; gap: 8px; min-width: 0; }
+.group-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.btns { display: flex; flex-wrap: wrap; gap: 6px; }
+button {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
+}
+button:hover { border-color: #3d4852; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(111, 208, 218, .08);
+}
+
+aside {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 18px;
+}
+aside h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 15px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+.spec { display: grid; gap: 6px; }
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  padding-block: 5px;
+  border-bottom: 1px solid var(--line);
+}
+.row:last-child { border-bottom: 0; }
+.row .k { color: var(--muted); min-width: 0; }
+.row .v {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+.notes { margin: 0; padding-left: 18px; display: grid; gap: 8px; color: var(--fg); }
+.notes li::marker { color: var(--accent); }
+.notes b { font-weight: 500; color: var(--accent); }
+.legend { display: flex; flex-wrap: wrap; gap: 10px 16px; font-size: 12px; color: var(--muted); }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; border: 1px solid #333; }
+@media (prefers-reduced-motion: reduce) { button { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Office build · Corridor-style console · v1 design</div>
+    <h1>Louvered Media Console</h1>
+    <p class="sub">65 × 28 × 18 in. Three full-height slatted walnut fronts on a recessed matte-black plinth under a black etched-glass top. A full-width soundbar shelf sits behind the slats, and the center front is the drawer. Drag to orbit, scroll or pinch to zoom.</p>
+  </header>
+
+  <div class="layout">
+    <div class="stage">
+      <div class="viewer" id="viewer">
+        <div class="status" id="status">Closed</div>
+        <div class="hint">Drag to orbit · scroll to zoom · right-drag to pan</div>
+      </div>
+
+      <div class="controls">
+        <div class="group">
+          <div class="group-label">Camera</div>
+          <div class="btns" id="views">
+            <button type="button" id="v-34" data-view="threeq" aria-pressed="true">3/4</button>
+            <button type="button" id="v-front" data-view="front" aria-pressed="false">Front</button>
+            <button type="button" id="v-side" data-view="side" aria-pressed="false">Side</button>
+            <button type="button" id="v-top" data-view="top" aria-pressed="false">Top</button>
+            <button type="button" id="v-back" data-view="back" aria-pressed="false">Back</button>
+            <button type="button" id="v-low" data-view="low" aria-pressed="false">Low 3/4</button>
+          </div>
+        </div>
+        <div class="group">
+          <div class="group-label">State</div>
+          <div class="btns" id="states">
+            <button type="button" id="s-doors" data-state="doors" aria-pressed="false">Doors open</button>
+            <button type="button" id="s-drawer" data-state="drawer" aria-pressed="false">Drawer open</button>
+            <button type="button" id="s-back" data-state="back" aria-pressed="false">Back panels off</button>
+            <button type="button" id="s-led" data-state="led" aria-pressed="false">Plinth light</button>
+            <button type="button" id="s-all" data-preset="all" aria-pressed="false">Open everything</button>
+            <button type="button" id="s-close" data-preset="close" aria-pressed="false">Close all</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span><span class="sw" style="background:#4a2c1c"></span>Dark walnut (fronts, sides)</span>
+        <span><span class="sw" style="background:#121314"></span>Matte black (interior, plinth, back)</span>
+        <span><span class="sw" style="background:#050506"></span>Black etched glass</span>
+        <span><span class="sw" style="background:#2a2c30"></span>Black powder-coated aluminum (back)</span>
+        <span><span class="sw" style="background:#c9b08a"></span>Baltic birch drawer box</span>
+        <span><span class="sw" style="background:#3a3d42"></span>Placeholder gear</span>
+      </div>
+    </div>
+
+    <aside>
+      <div class="spec">
+        <h2>Overall</h2>
+        <div class="row"><span class="k">Envelope</span><span class="v">65 W × 28 H × 20 D</span></div>
+        <div class="row"><span class="k">Plinth (recessed, black)</span><span class="v">62 × 4 × 16½</span></div>
+        <div class="row"><span class="k">Case</span><span class="v">65 × 23¾ × 18⅞</span></div>
+        <div class="row"><span class="k">Fronts (walnut slats on backer)</span><span class="v">1⅛ thick</span></div>
+        <div class="row"><span class="k">Top, black etched tempered</span><span class="v">65 × 20 × ¼</span></div>
+      </div>
+
+      <div class="spec">
+        <h2>Fronts</h2>
+        <div class="row"><span class="k">Doors (×2)</span><span class="v">19 1/16 × 23⅝</span></div>
+        <div class="row"><span class="k">Drawer front</span><span class="v">26⅝ × 23⅝</span></div>
+        <div class="row"><span class="k">Front thickness</span><span class="v">1⅛</span></div>
+        <div class="row"><span class="k">Walnut slat</span><span class="v">¾ H × ½ D</span></div>
+        <div class="row"><span class="k">Gap between slats</span><span class="v">⅜</span></div>
+        <div class="row"><span class="k">Slats per front</span><span class="v">21</span></div>
+        <div class="row"><span class="k">Slats, total</span><span class="v">63</span></div>
+        <div class="row"><span class="k">Backer frame, black</span><span class="v">15mm Baltic birch</span></div>
+        <div class="row"><span class="k">Bar pulls, black</span><span class="v">8 wide</span></div>
+      </div>
+
+      <div class="spec">
+        <h2>Inside</h2>
+        <div class="row"><span class="k">Top compartment, full width</span><span class="v">63½ × 7½ × 16</span></div>
+        <div class="row"><span class="k">Gear bays (×2)</span><span class="v">18 W × 14 H × 18½ D</span></div>
+        <div class="row"><span class="k">Drawer opening</span><span class="v">26 × 14</span></div>
+        <div class="row"><span class="k">Drawer box (confirm to slide)</span><span class="v">25⅝ × 11 × 15</span></div>
+        <div class="row"><span class="k">Slides, soft-close</span><span class="v">15 undermount</span></div>
+        <div class="row"><span class="k">Cable chase (⊥), ½ ply, 2 deep</span><span class="v">26 run + 6 stem</span></div>
+        <div class="row"><span class="k">Bottom run, inside height</span><span class="v">3½</span></div>
+        <div class="row"><span class="k">Cable holes: each divider + shelf</span><span class="v">1½ dia</span></div>
+        <div class="row"><span class="k">Rear stretcher under top</span><span class="v">¾ × 2</span></div>
+      </div>
+
+      <div class="spec">
+        <h2>Back</h2>
+        <div class="row"><span class="k">Removable panels, .090 aluminum</span><span class="v">3</span></div>
+        <div class="row"><span class="k">Side panels (×2, same part)</span><span class="v">18 5/16 × 22½</span></div>
+        <div class="row"><span class="k">Center panel (chase cover)</span><span class="v">26⅝ × 22½</span></div>
+        <div class="row"><span class="k">Vents: circuit traces, ⅝ holes</span><span class="v">1 nodes</span></div>
+        <div class="row"><span class="k">Open area, side / center</span><span class="v">14.6% / 10.3%</span></div>
+        <div class="row"><span class="k">Cable port (center)</span><span class="v">2½ dia</span></div>
+        <div class="row"><span class="k">Power cord U-notch (center, off to one side)</span><span class="v">1 × 1½</span></div>
+        <div class="row"><span class="k">Finger grips (×2 per panel)</span><span class="v">1¼ dia</span></div>
+        <div class="row"><span class="k">Groove ⅛ wide, in from back</span><span class="v">⅜</span></div>
+        <div class="row"><span class="k">Groove depth, top / bottom</span><span class="v">5/16 / ⅛</span></div>
+      </div>
+
+      <div class="spec">
+        <h2>How the front is built</h2>
+        <ul class="notes">
+          <li><b>No louvers, no stiles.</b> Flat walnut slats run edge to edge and are glued and pin-nailed to a black ⅝" backer frame. No angled mortises.</li>
+          <li><b>Black grille cloth behind the slats.</b> It hides the gear and passes sound and IR. Everything visible through the gaps is black.</li>
+          <li><b>The soundbar shelf spans behind all three fronts.</b> Sound comes through the slats. Pulling the drawer reveals the shelf, the same way the Corridor does it.</li>
+          <li><b>Hinges and slides mount to the backer.</b> A 35mm hinge cup is about ½" deep, so ⅝" backer stiles hold it.</li>
+          <li><b>Slats line up across all three fronts.</b> Same 21-slat layout, same 1⅛" pitch.</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function () {
+  const viewerEl = document.getElementById('viewer');
+  const statusEl = document.getElementById('status');
+  if (!window.THREE) {
+    const f = document.createElement('div');
+    f.className = 'fallback';
+    f.textContent = 'The 3D viewer could not load. Reload the page to try again.';
+    viewerEl.appendChild(f);
+    return;
+  }
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const D = Math.PI / 180;
+
+  // ---------- renderer / scene ----------
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  viewerEl.prepend(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0b0d0f);
+
+  const camera = new THREE.PerspectiveCamera(32, 16 / 10, 1, 2000);
+  camera.position.set(78, 44, 104);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.target.set(0, 13, 0);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.minDistance = 40;
+  controls.maxDistance = 320;
+  controls.maxPolarAngle = 88 * D;
+  controls.update();
+
+  // ---------- lights ----------
+  scene.add(new THREE.HemisphereLight(0xdfe8ee, 0x2a2420, 0.55));
+  const key = new THREE.DirectionalLight(0xfff3e6, 1.15);
+  key.position.set(60, 110, 90);
+  key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048);
+  const sc = key.shadow.camera;
+  sc.left = -70; sc.right = 70; sc.top = 70; sc.bottom = -30; sc.near = 10; sc.far = 300;
+  key.shadow.bias = -0.0006;
+  scene.add(key);
+  const fill = new THREE.DirectionalLight(0xcfe3ff, 0.35);
+  fill.position.set(-90, 50, 40);
+  scene.add(fill);
+  const rim = new THREE.DirectionalLight(0xffffff, 0.3);
+  rim.position.set(-40, 60, -120);
+  scene.add(rim);
+
+  // ---------- textures ----------
+  function woodTexture(vertical) {
+    const c = document.createElement('canvas');
+    c.width = 512; c.height = 512;
+    const g = c.getContext('2d');
+    g.fillStyle = '#3f2517';
+    g.fillRect(0, 0, 512, 512);
+    let seed = vertical ? 7 : 3;
+    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    for (let i = 0; i < 150; i++) {
+      const y0 = rnd() * 512;
+      const amp = 2 + rnd() * 7;
+      const freq = 0.004 + rnd() * 0.012;
+      const light = rnd() > 0.55;
+      g.strokeStyle = light ? `rgba(120,78,50,${0.08 + rnd() * 0.18})` : `rgba(18,9,4,${0.12 + rnd() * 0.25})`;
+      g.lineWidth = 0.6 + rnd() * 2.4;
+      g.beginPath();
+      for (let x = 0; x <= 512; x += 8) {
+        const y = y0 + Math.sin(x * freq + i) * amp;
+        if (x === 0) g.moveTo(x, y); else g.lineTo(x, y);
+      }
+      g.stroke();
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.encoding = THREE.sRGBEncoding;
+    if (vertical) { t.center.set(0.5, 0.5); t.rotation = Math.PI / 2; }
+    t.anisotropy = 4;
+    return t;
+  }
+  function floorTexture() {
+    const c = document.createElement('canvas');
+    c.width = 1024; c.height = 1024;
+    const g = c.getContext('2d');
+    const plankW = 1024 / 8;
+    for (let i = 0; i < 8; i++) {
+      const tone = 108 + ((i * 37) % 22);
+      g.fillStyle = `rgb(${tone},${tone - 10},${tone - 22})`;
+      g.fillRect(i * plankW, 0, plankW, 1024);
+      g.fillStyle = 'rgba(0,0,0,0.35)';
+      g.fillRect(i * plankW, 0, 2, 1024);
+      const cut = (i * 311) % 1024;
+      g.fillRect(i * plankW, cut, plankW, 2);
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(3, 3);
+    t.encoding = THREE.sRGBEncoding;
+    return t;
+  }
+
+  // ---------- materials ----------
+  const M = {
+    walnutH: new THREE.MeshStandardMaterial({ map: woodTexture(false), roughness: 0.55, metalness: 0 }),
+    walnutV: new THREE.MeshStandardMaterial({ map: woodTexture(true), roughness: 0.55, metalness: 0 }),
+    black: new THREE.MeshStandardMaterial({ color: 0x141516, roughness: 0.92 }),
+    plinth: new THREE.MeshStandardMaterial({ color: 0x0f1011, roughness: 0.95 }),
+    glass: new THREE.MeshStandardMaterial({ color: 0x060607, roughness: 0.28, metalness: 0.2 }),
+    cloth: new THREE.MeshStandardMaterial({ color: 0x0a0a0b, roughness: 1 }),
+    birch: new THREE.MeshStandardMaterial({ color: 0xcdb48d, roughness: 0.75 }),
+    gear: new THREE.MeshStandardMaterial({ color: 0x33363b, roughness: 0.5, metalness: 0.2 }),
+    gearDark: new THREE.MeshStandardMaterial({ color: 0x1b1c1f, roughness: 0.45, metalness: 0.1 }),
+    metal: new THREE.MeshStandardMaterial({ color: 0x151618, roughness: 0.62, metalness: 0.35, side: THREE.DoubleSide }),
+    pull: new THREE.MeshStandardMaterial({ color: 0x0c0c0d, roughness: 0.35, metalness: 0.6 }),
+    led: new THREE.MeshStandardMaterial({ color: 0x0d2a2d, emissive: 0x6fe6f2, emissiveIntensity: 0 }),
+    floor: new THREE.MeshStandardMaterial({ map: floorTexture(), roughness: 0.7 }),
+    wall: new THREE.MeshStandardMaterial({ color: 0x9da3a2, roughness: 0.95 })
+  };
+
+  function box(w, h, d, mat, x, y, z, parent) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.position.set(x, y, z);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    (parent || scene).add(m);
+    return m;
+  }
+
+  // ---------- room ----------
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), M.floor);
+  floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
+  scene.add(floor);
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(400, 200), M.wall);
+  wall.position.set(0, 100, -10);
+  wall.receiveShadow = true;
+  scene.add(wall);
+
+  // ---------- geometry constants (inches) ----------
+  const W = 65, CASE_D = 18.875, FRONT_T = 1.125;
+  const Y0 = 4;                 // top of plinth / bottom of case
+  const CASE_H = 23.75;
+  const ZB = -9, ZF = ZB + CASE_D; // case back / case front (z = 7.875); fronts 7.875..9
+  const T = 0.75;
+  const inX = W / 2 - T;         // 31.75 interior half-width
+  const shelfTop = Y0 + 15.5;    // 14" gear bays below, 7-1/2" top compartment above
+  const shelfY = shelfTop - T / 2;
+  const divH = shelfTop - T - (Y0 + T); // 15.875
+  const divY = Y0 + T + divH / 2;
+  const innerD = CASE_D - 0.25;
+  const innerZ = ZF - innerD / 2;
+
+  // plinth: 62 x 4 x 13.5, back 0.5 in from case back
+  const PL_D = 16.5;
+  const plinthZ = ZB + 0.5 + PL_D / 2;
+  box(62, 4, T, M.plinth, 0, 2, ZB + 0.5 + PL_D - T / 2);
+  box(62, 4, T, M.plinth, 0, 2, ZB + 0.5 + T / 2);
+  box(T, 4, PL_D - 2 * T, M.plinth, -31 + T / 2, 2, plinthZ);
+  box(T, 4, PL_D - 2 * T, M.plinth, 31 - T / 2, 2, plinthZ);
+  box(T, 4, PL_D - 2 * T, M.plinth, 0, 2, plinthZ);
+
+  // LED strip (optional) under case front, lighting the recess
+  const ledStrip = box(58, 0.12, 0.5, M.led, 0, Y0 - 0.1, ZB + 0.5 + PL_D + 0.6);
+  ledStrip.castShadow = false;
+  const ledLights = [-22, 0, 22].map(x => {
+    const p = new THREE.PointLight(0x6fe6f2, 0, 26, 2);
+    p.position.set(x, 1.2, ZB + 0.5 + PL_D + 1.2);
+    scene.add(p);
+    return p;
+  });
+
+  // case
+  box(T, CASE_H, CASE_D, M.walnutV, -W / 2 + T / 2, Y0 + CASE_H / 2, ZB + CASE_D / 2);
+  box(T, CASE_H, CASE_D, M.walnutV, W / 2 - T / 2, Y0 + CASE_H / 2, ZB + CASE_D / 2);
+  box(W - 2 * T, T, CASE_D, M.black, 0, Y0 + T / 2, ZB + CASE_D / 2);
+  box(W - 2 * T, T, CASE_D, M.black, 0, Y0 + CASE_H - T / 2, ZB + CASE_D / 2);
+  // ---- shelf + dividers run full depth, stopping just in front of the back panels ----
+  const REAR = ZB + 0.45;                 // rear edge of shelf/dividers (panels sit 3/8" in from the back)
+  const CH_BACK = ZB + 0.375;             // inside face of the removable panels
+  const CH_WALL = CH_BACK + 2.0;          // 2" deep chase
+  const PLY = 0.5;                        // 1/2" ply for the chase
+  const BAR_H = 3.5;                      // inside height of the bottom run
+  const dvBot = Y0 + T, dvTop = shelfTop - T;
+  const holeMat = new THREE.MeshStandardMaterial({ color: 0x030303, roughness: 1 });
+  function holeThrough(x, y, z, r, axis) {
+    const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.8, 32), holeMat);
+    if (axis === 'x') c.rotation.z = Math.PI / 2;
+    c.position.set(x, y, z); scene.add(c); return c;
+  }
+  box(W - 2 * T, T, ZF - REAR, M.black, 0, shelfY, (ZF + REAR) / 2);
+  [-13.375, 13.375].forEach(x => box(T, divH, ZF - REAR, M.black, x, divY, (ZF + REAR) / 2));
+  const HOLE_Z = ZB + 1.6, HOLE_R = 0.75;
+  // 1-1/2" holes: one low in each divider, one in the shelf over the stem
+  [-13.375, 13.375].forEach(x => holeThrough(x, dvBot + 1.1, HOLE_Z, HOLE_R, 'x'));
+  holeThrough(0, shelfY, HOLE_Z, HOLE_R, 'y');
+
+  // ---- inverted-T chase: bottom run between the dividers + 6" stem up the middle to the shelf ----
+  const chZ0 = REAR, chZ1 = CH_WALL;                       // walls run from just in front of the panels to the front plate
+  box(26, BAR_H + PLY, PLY, M.black, 0, dvBot + (BAR_H + PLY) / 2, CH_WALL + PLY / 2);          // bottom run front plate
+  [-1, 1].forEach(sx => box(10, PLY, chZ1 - chZ0, M.black, sx * 8, dvBot + BAR_H + PLY / 2, (chZ0 + chZ1) / 2)); // bottom run lids
+  const stemY0 = dvBot + BAR_H, stemH = dvTop - stemY0;
+  box(6, stemH, PLY, M.black, 0, stemY0 + stemH / 2, CH_WALL + PLY / 2);                        // stem front plate
+  [-1, 1].forEach(sx => box(PLY, stemH, chZ1 - chZ0, M.black, sx * 2.75, stemY0 + stemH / 2, (chZ0 + chZ1) / 2)); // stem sides
+
+  // rear stretcher under the top, in front of the panels: keeps the case square now that no back is fixed
+  box(W - 2 * T, 2, 0.75, M.black, 0, Y0 + CASE_H - T - 1, REAR + 0.375);
+
+  // power strip lying in the middle of the bottom run
+  const STRIP_Y = dvBot + 0.65, STRIP_Z = ZB + 1.25;
+  box(11, 1.3, 1.4, M.gearDark, 0, STRIP_Y, STRIP_Z);
+
+  // ---- removable back panels: .090 aluminum, matte black powder coat, circle vents ----
+  const HOLES = {"PH": 22.5, "side": {"w": 18.3125, "holes": [[1.8375, 15.4, 0.625], [16.4375, 15.4, 0.625], [1.6875, 2.25, 0.5], [3.0875, 3.55, 0.5], [2.2875, 4.85, 0.5], [4.2875, 6.15, 0.5], [1.6875, 7.45, 0.5], [3.4875, 8.75, 0.5], [2.0875, 10.05, 0.5], [3.8875, 11.35, 0.5], [1.6875, 12.65, 0.5], [16.6875, 2.25, 0.5], [15.0875, 4.85, 0.5], [16.4875, 6.15, 0.5], [14.2875, 8.75, 0.5], [16.6875, 10.05, 0.5], [15.4875, 12.65, 0.5], [2.2875, 18.75, 0.5], [16.4875, 20.25, 0.5], [6.6875, 20.25, 0.5], [2.6875, 17.0, 0.5], [3.5625, 2.25, 0.3125], [4.5, 2.25, 0.3125], [5.4375, 2.25, 0.3125], [6.375, 2.25, 0.3125], [7.3125, 2.25, 0.3125], [8.25, 2.25, 0.3125], [9.1875, 2.25, 0.3125], [10.125, 2.25, 0.3125], [11.0625, 2.25, 0.3125], [12.0, 2.25, 0.3125], [12.9375, 2.25, 0.3125], [13.875, 2.25, 0.3125], [14.8125, 2.25, 0.3125], [4.9849, 3.55, 0.3125], [5.9335, 3.55, 0.3125], [6.8822, 3.55, 0.3125], [7.8309, 3.55, 0.3125], [8.7796, 3.55, 0.3125], [9.7282, 3.55, 0.3125], [10.6769, 3.55, 0.3125], [11.6256, 3.55, 0.3125], [12.5743, 3.55, 0.3125], [13.5229, 3.55, 0.3125], [14.4716, 3.55, 0.3125], [15.4203, 3.55, 0.3125], [16.369, 3.55, 0.3125], [4.2567, 4.85, 0.3125], [5.2413, 4.85, 0.3125], [6.226, 4.85, 0.3125], [7.2106, 4.85, 0.3125], [8.1952, 4.85, 0.3125], [9.1798, 4.85, 0.3125], [10.1644, 4.85, 0.3125], [11.149, 4.85, 0.3125], [12.1337, 4.85, 0.3125], [13.1183, 4.85, 0.3125], [6.1644, 6.15, 0.3125], [7.1029, 6.15, 0.3125], [8.0413, 6.15, 0.3125], [8.9798, 6.15, 0.3125], [9.9183, 6.15, 0.3125], [10.8567, 6.15, 0.3125], [11.7952, 6.15, 0.3125], [12.7337, 6.15, 0.3125], [13.6721, 6.15, 0.3125], [14.6106, 6.15, 0.3125], [3.6102, 7.45, 0.3125], [4.5715, 7.45, 0.3125], [5.5329, 7.45, 0.3125], [6.4942, 7.45, 0.3125], [7.4556, 7.45, 0.3125], [8.4169, 7.45, 0.3125], [9.3783, 7.45, 0.3125], [10.3396, 7.45, 0.3125], [11.3009, 7.45, 0.3125], [12.2623, 7.45, 0.3125], [13.2236, 7.45, 0.3125], [14.185, 7.45, 0.3125], [15.1463, 7.45, 0.3125], [16.1077, 7.45, 0.3125], [5.4511, 8.75, 0.3125], [6.433, 8.75, 0.3125], [7.4148, 8.75, 0.3125], [8.3966, 8.75, 0.3125], [9.3784, 8.75, 0.3125], [10.3602, 8.75, 0.3125], [11.342, 8.75, 0.3125], [12.3239, 8.75, 0.3125], [4.0342, 10.05, 0.3125], [5.0075, 10.05, 0.3125], [5.9808, 10.05, 0.3125], [6.9542, 10.05, 0.3125], [7.9275, 10.05, 0.3125], [8.9008, 10.05, 0.3125], [9.8742, 10.05, 0.3125], [10.8475, 10.05, 0.3125], [11.8208, 10.05, 0.3125], [12.7942, 10.05, 0.3125], [13.7675, 10.05, 0.3125], [14.7408, 10.05, 0.3125], [5.7947, 11.35, 0.3125], [6.7483, 11.35, 0.3125], [7.7019, 11.35, 0.3125], [8.6555, 11.35, 0.3125], [9.6091, 11.35, 0.3125], [10.5627, 11.35, 0.3125], [11.5163, 11.35, 0.3125], [12.4699, 11.35, 0.3125], [13.4234, 11.35, 0.3125], [14.377, 11.35, 0.3125], [15.3306, 11.35, 0.3125], [16.2842, 11.35, 0.3125], [3.5275, 12.65, 0.3125], [4.4475, 12.65, 0.3125], [5.3675, 12.65, 0.3125], [6.2875, 12.65, 0.3125], [7.2075, 12.65, 0.3125], [8.1275, 12.65, 0.3125], [9.0475, 12.65, 0.3125], [9.9675, 12.65, 0.3125], [10.8875, 12.65, 0.3125], [11.8075, 12.65, 0.3125], [12.7275, 12.65, 0.3125], [13.6475, 12.65, 0.3125], [16.7319, 18.75, 0.3125], [15.769, 18.75, 0.3125], [14.806, 18.75, 0.3125], [13.8431, 18.75, 0.3125], [12.8801, 18.75, 0.3125], [11.9171, 18.75, 0.3125], [10.9542, 18.75, 0.3125], [9.9912, 18.75, 0.3125], [9.0282, 18.75, 0.3125], [8.0653, 18.75, 0.3125], [7.1023, 18.75, 0.3125], [6.1394, 18.75, 0.3125], [5.1764, 18.75, 0.3125], [4.2134, 18.75, 0.3125], [14.5275, 20.25, 0.3125], [13.5475, 20.25, 0.3125], [12.5675, 20.25, 0.3125], [11.5875, 20.25, 0.3125], [10.6075, 20.25, 0.3125], [9.6275, 20.25, 0.3125], [8.6475, 20.25, 0.3125], [16.9049, 17.0, 0.3125], [15.9571, 17.0, 0.3125], [15.0092, 17.0, 0.3125], [14.0614, 17.0, 0.3125], [13.1136, 17.0, 0.3125], [12.1658, 17.0, 0.3125], [11.2179, 17.0, 0.3125], [10.2701, 17.0, 0.3125], [9.3223, 17.0, 0.3125], [8.3745, 17.0, 0.3125], [7.4266, 17.0, 0.3125], [6.4788, 17.0, 0.3125], [5.531, 17.0, 0.3125], [4.5832, 17.0, 0.3125]]}, "center": {"w": 26.625, "holes": [[13.3125, 18.75, 1.25], [2.0625, 15.4, 0.625], [24.5625, 15.4, 0.625], [15.3892, 19.3065, 0.1875], [14.8328, 20.2703, 0.1875], [13.869, 20.8267, 0.1875], [12.756, 20.8267, 0.1875], [11.7922, 20.2703, 0.1875], [11.2358, 19.3065, 0.1875], [11.2358, 18.1935, 0.1875], [11.7922, 17.2297, 0.1875], [12.756, 16.6733, 0.1875], [13.869, 16.6733, 0.1875], [14.8328, 17.2297, 0.1875], [15.3892, 18.1935, 0.1875], [11.4125, 15.5, 0.5], [9.6125, 15.5, 0.5], [7.8125, 15.5, 0.5], [6.1125, 17.0, 0.5], [15.2125, 15.5, 0.5], [17.0125, 15.5, 0.5], [18.8125, 15.5, 0.5], [20.5125, 17.0, 0.5], [1.7887, 3.55, 0.3125], [2.7374, 3.55, 0.3125], [3.686, 3.55, 0.3125], [4.6347, 3.55, 0.3125], [5.5834, 3.55, 0.3125], [6.5321, 3.55, 0.3125], [7.4807, 3.55, 0.3125], [8.4294, 3.55, 0.3125], [9.3781, 3.55, 0.3125], [10.2933, 3.6308, 0.3125], [10.9641, 4.3016, 0.3125], [11.4125, 5.0646, 0.3125], [11.4125, 6.0132, 0.3125], [11.4125, 6.9619, 0.3125], [11.4125, 7.9106, 0.3125], [11.4125, 8.8593, 0.3125], [11.4125, 9.8079, 0.3125], [11.4125, 10.7566, 0.3125], [11.4125, 11.7053, 0.3125], [11.4125, 12.654, 0.3125], [11.4125, 13.6026, 0.3125], [1.578, 7.45, 0.3125], [2.5394, 7.45, 0.3125], [3.5007, 7.45, 0.3125], [4.4621, 7.45, 0.3125], [5.4234, 7.45, 0.3125], [6.3848, 7.45, 0.3125], [7.3461, 7.45, 0.3125], [8.3075, 7.45, 0.3125], [9.018, 8.0555, 0.3125], [9.6125, 8.7706, 0.3125], [9.6125, 9.7319, 0.3125], [9.6125, 10.6933, 0.3125], [9.6125, 11.6546, 0.3125], [9.6125, 12.616, 0.3125], [9.6125, 13.5773, 0.3125], [1.7236, 11.35, 0.3125], [2.6772, 11.35, 0.3125], [3.6308, 11.35, 0.3125], [4.5844, 11.35, 0.3125], [5.538, 11.35, 0.3125], [6.4916, 11.35, 0.3125], [7.2013, 11.9388, 0.3125], [7.8125, 12.6392, 0.3125], [7.8125, 13.5928, 0.3125], [9.9125, 18.75, 0.3125], [8.9495, 18.75, 0.3125], [7.9866, 18.75, 0.3125], [7.0236, 18.75, 0.3125], [6.0606, 18.75, 0.3125], [5.0977, 18.75, 0.3125], [4.1347, 18.75, 0.3125], [3.1718, 18.75, 0.3125], [2.2088, 18.75, 0.3125], [4.2168, 17.0, 0.3125], [3.269, 17.0, 0.3125], [2.3212, 17.0, 0.3125], [1.3734, 17.0, 0.3125], [1.3125, 5.5, 0.3125], [2.2325, 5.5, 0.3125], [3.1525, 5.5, 0.3125], [4.0725, 5.5, 0.3125], [4.9925, 5.5, 0.3125], [5.9125, 5.5, 0.3125], [1.3125, 9.4, 0.3125], [2.2325, 9.4, 0.3125], [3.1525, 9.4, 0.3125], [4.0725, 9.4, 0.3125], [4.9925, 9.4, 0.3125], [5.9125, 9.4, 0.3125], [1.3125, 13.3, 0.3125], [2.2325, 13.3, 0.3125], [3.1525, 13.3, 0.3125], [4.0725, 13.3, 0.3125], [4.9925, 13.3, 0.3125], [5.9125, 13.3, 0.3125], [24.8363, 3.55, 0.3125], [23.8876, 3.55, 0.3125], [22.939, 3.55, 0.3125], [21.9903, 3.55, 0.3125], [21.0416, 3.55, 0.3125], [20.0929, 3.55, 0.3125], [19.1443, 3.55, 0.3125], [18.1956, 3.55, 0.3125], [17.2469, 3.55, 0.3125], [16.3317, 3.6308, 0.3125], [15.6609, 4.3016, 0.3125], [15.2125, 5.0646, 0.3125], [15.2125, 6.0132, 0.3125], [15.2125, 6.9619, 0.3125], [15.2125, 7.9106, 0.3125], [15.2125, 8.8593, 0.3125], [15.2125, 9.8079, 0.3125], [15.2125, 10.7566, 0.3125], [15.2125, 11.7053, 0.3125], [15.2125, 12.654, 0.3125], [15.2125, 13.6026, 0.3125], [25.047, 7.45, 0.3125], [24.0856, 7.45, 0.3125], [23.1243, 7.45, 0.3125], [22.1629, 7.45, 0.3125], [21.2016, 7.45, 0.3125], [20.2402, 7.45, 0.3125], [19.2789, 7.45, 0.3125], [18.3175, 7.45, 0.3125], [17.607, 8.0555, 0.3125], [17.0125, 8.7706, 0.3125], [17.0125, 9.7319, 0.3125], [17.0125, 10.6933, 0.3125], [17.0125, 11.6546, 0.3125], [17.0125, 12.616, 0.3125], [17.0125, 13.5773, 0.3125], [24.9014, 11.35, 0.3125], [23.9478, 11.35, 0.3125], [22.9942, 11.35, 0.3125], [22.0406, 11.35, 0.3125], [21.087, 11.35, 0.3125], [20.1334, 11.35, 0.3125], [19.4237, 11.9388, 0.3125], [18.8125, 12.6392, 0.3125], [18.8125, 13.5928, 0.3125], [16.7125, 18.75, 0.3125], [17.6755, 18.75, 0.3125], [18.6384, 18.75, 0.3125], [19.6014, 18.75, 0.3125], [20.5644, 18.75, 0.3125], [21.5273, 18.75, 0.3125], [22.4903, 18.75, 0.3125], [23.4532, 18.75, 0.3125], [24.4162, 18.75, 0.3125], [22.4082, 17.0, 0.3125], [23.356, 17.0, 0.3125], [24.3038, 17.0, 0.3125], [25.2516, 17.0, 0.3125], [25.3125, 5.5, 0.3125], [24.3925, 5.5, 0.3125], [23.4725, 5.5, 0.3125], [22.5525, 5.5, 0.3125], [21.6325, 5.5, 0.3125], [20.7125, 5.5, 0.3125], [25.3125, 9.4, 0.3125], [24.3925, 9.4, 0.3125], [23.4725, 9.4, 0.3125], [22.5525, 9.4, 0.3125], [21.6325, 9.4, 0.3125], [20.7125, 9.4, 0.3125], [25.3125, 13.3, 0.3125], [24.3925, 13.3, 0.3125], [23.4725, 13.3, 0.3125], [22.5525, 13.3, 0.3125], [21.6325, 13.3, 0.3125], [20.7125, 13.3, 0.3125]]}};
+  const backPanels = new THREE.Group();
+  scene.add(backPanels);
+  function circlePanel(w, h, holes, flip, notch) {
+    const s = new THREE.Shape();
+    s.moveTo(0, 0);
+    if (notch) {
+      const r = notch.w / 2;
+      s.lineTo(notch.x - r, 0); s.lineTo(notch.x - r, notch.h - r);
+      s.absarc(notch.x, notch.h - r, r, Math.PI, 0, true);
+      s.lineTo(notch.x + r, 0);
+    }
+    s.lineTo(w, 0); s.lineTo(w, h); s.lineTo(0, h); s.lineTo(0, 0);
+    holes.forEach(([x, y, r]) => {
+      const p = new THREE.Path();
+      p.absarc(flip ? w - x : x, y, r, 0, Math.PI * 2, true);
+      s.holes.push(p);
+    });
+    const m = new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth: 0.09, bevelEnabled: false, curveSegments: 14 }), M.metal);
+    m.castShadow = true; m.receiveShadow = true;
+    return m;
+  }
+  const PZ = CH_BACK - 0.09, PY = Y0 + T - 0.125;
+  // viewed from the front of the model, x runs left to right; the back is seen mirrored from behind
+  const pl = circlePanel(HOLES.side.w, HOLES.PH, HOLES.side.holes, false);
+  pl.position.set(-31.75 + 0.0625, PY, PZ); backPanels.add(pl);
+  const pc = circlePanel(HOLES.center.w, HOLES.PH, HOLES.center.holes, false, { x: 5.0, w: 1.0, h: 1.5 });  // U-notch for the power cord
+  pc.position.set(-HOLES.center.w / 2, PY, PZ); backPanels.add(pc);
+  const pr = circlePanel(HOLES.side.w, HOLES.PH, HOLES.side.holes, true);
+  pr.position.set(31.75 - 0.0625 - HOLES.side.w, PY, PZ); backPanels.add(pr);
+
+
+  // glass top
+  box(W, 0.25, 20, M.glass, 0, Y0 + CASE_H + 0.125, ZB + 10);
+
+  // placeholder gear
+  box(15.4, 4.1, 10.2, M.gear, -22.75, Y0 + T + 2.05, -1.5);           // console lying flat, left bay
+  box(6, 1.2, 6, M.gearDark, 22.75, Y0 + T + 4.5 + 0.6, -1.5);          // streamer on the receiver
+  box(12, 4.5, 11, M.gear, 22.75, Y0 + T + 2.25, -1.5);                 // receiver/NAS, right bay
+  const soundbar = box(34, 2.75, 4.1, M.gearDark, -4, shelfTop + 1.375, 3.5); // 34" soundbar on shelf
+  box(11.85, 6.3, 6.3, M.gear, 22.5, shelfTop + 3.15, 1.5);                  // console lying flat in the top compartment
+  soundbar.castShadow = true;
+
+  // cables: everything runs along the floor, through the divider holes, into the bottom run, then up the stem
+  const cableMat = new THREE.MeshStandardMaterial({ color: 0x2a2c30, roughness: 0.6 });
+  function cable(pts, r) {
+    const curve = new THREE.CatmullRomCurve3(pts.map(p => new THREE.Vector3(p[0], p[1], p[2])), false, 'centripetal');
+    const m = new THREE.Mesh(new THREE.TubeGeometry(curve, 96, r || 0.16, 8, false), cableMat);
+    m.castShadow = true; scene.add(m); return m;
+  }
+  const portY = PY + 18.75, floorY = dvBot + 0.3, holeY = dvBot + 1.1;
+  const toPort = (x) => [[x, shelfTop + 0.4, HOLE_Z], [x, portY - 0.6, CH_BACK + 0.6], [x * 0.6, portY, CH_BACK - 1.5], [x * 0.6, portY + 9, CH_BACK - 2.3]];
+  [-1, 1].forEach(sx => {
+    // power: bay gear -> floor -> divider hole -> power strip
+    cable([[sx * 20, dvBot + 2, -6.7], [sx * 19.5, floorY, -7.7], [sx * 16, floorY, HOLE_Z], [sx * 13.4, holeY - 0.2, HOLE_Z], [sx * 9, floorY + 0.2, ZB + 1.3], [sx * 5.6, STRIP_Y, STRIP_Z]]);
+    // HDMI: bay gear -> floor -> divider hole -> bottom run -> up the stem -> shelf hole -> port -> TV
+    cable([[sx * 24, dvBot + 2.5, -6.9], [sx * 23, floorY, -7.8], [sx * 16, floorY + 0.15, HOLE_Z], [sx * 13.4, holeY + 0.2, HOLE_Z],
+           [sx * 6, dvBot + 2.4, ZB + 1.5], [sx * 1.4, stemY0 + 1, ZB + 1.5], [sx * 1.1, dvTop - 1, ZB + 1.5], ...toPort(sx * 0.35)], 0.13);
+  });
+  // soundbar: power down the shelf hole and stem to the strip; HDMI eARC out the port
+  cable([[6, shelfTop + 1.2, 1.4], [3, shelfTop + 0.3, -4], [0.5, shelfTop + 0.2, HOLE_Z], [0.5, stemY0 + 1, ZB + 1.3], [0.9, STRIP_Y + 0.5, STRIP_Z]]);
+  cable([[-6, shelfTop + 1.4, 1.4], [-2, shelfTop + 1.6, -4], [-0.5, portY, CH_BACK + 0.6], [-0.3, portY, CH_BACK - 1.5], [-0.3, portY + 9, CH_BACK - 2.3]], 0.13);
+  // top-compartment console: power down the shelf hole, HDMI out the port
+  cable([[18, shelfTop + 1, -1.8], [10, shelfTop + 0.3, -6], [-0.4, shelfTop + 0.25, HOLE_Z], [-0.5, stemY0 + 1, ZB + 1.3], [-1.2, STRIP_Y + 0.5, STRIP_Z]]);
+  cable([[20, shelfTop + 2, -1.8], [6, shelfTop + 1.6, -6.5], [0.6, portY - 0.3, CH_BACK + 0.6], [0.5, portY, CH_BACK - 1.5], [0.5, portY + 9, CH_BACK - 2.3]], 0.13);
+  // one cord from the strip, along the bottom run, out the U-notch in the center panel, down to the wall outlet
+  const NOTCH_X = -HOLES.center.w / 2 + 5.0;
+  cable([[-5.6, STRIP_Y, STRIP_Z], [NOTCH_X + 1.5, dvBot + 0.35, ZB + 1.1], [NOTCH_X, dvBot + 0.45, CH_BACK - 0.05], [NOTCH_X, dvBot + 0.4, ZB - 0.6],
+         [NOTCH_X, 2.5, ZB - 0.8], [NOTCH_X - 0.5, 0.35, ZB - 0.85], [-14, 0.3, ZB - 0.85], [-16, 1.5, ZB - 0.9], [-16, 12, ZB - 0.9]], 0.18);
+
+  // ---------- slatted front builder ----------
+  // Origin at bottom-left-back of the front. Extends +x (w), +y (h), +z (t).
+  // Black 5/8" backer frame (hinge and slide mounting) + grille cloth,
+  // with 21 horizontal walnut slats (3/4" tall x 1/2" deep, 3/8" gaps) running edge to edge.
+  const SLAT_H = 0.75, SLAT_D = 0.5, GAP = 0.375, BACKER = 0.625;
+  const PITCH = SLAT_H + GAP;
+  function slatFront(opt) {
+    const g = new THREE.Group();
+    const w = opt.w, h = opt.h;
+    const stile = 2.5, rail = 1.5;
+    box(stile, h, BACKER, M.black, stile / 2, h / 2, BACKER / 2, g);
+    box(stile, h, BACKER, M.black, w - stile / 2, h / 2, BACKER / 2, g);
+    box(w - 2 * stile, rail, BACKER, M.black, w / 2, rail / 2, BACKER / 2, g);
+    box(w - 2 * stile, rail, BACKER, M.black, w / 2, h - rail / 2, BACKER / 2, g);
+    box(w - 2 * stile, h - 2 * rail, 0.04, M.cloth, w / 2, h / 2, BACKER - 0.05, g);
+    const n = Math.round((h - GAP) / PITCH);
+    const first = (h - (n * SLAT_H + (n - 1) * GAP)) / 2 + SLAT_H / 2;
+    for (let i = 0; i < n; i++) {
+      box(w, SLAT_H, SLAT_D, M.walnutH, w / 2, first + i * PITCH, BACKER + SLAT_D / 2, g);
+    }
+    // black bar pull on the top slat
+    const topY = first + (n - 1) * PITCH;
+    const pull = box(8, 0.6, 0.18, M.pull, opt.pullX, topY + 0.02, BACKER + SLAT_D + 0.09, g);
+    pull.castShadow = false;
+    g.userData.slats = n;
+    return g;
+  }
+
+  const FRONT_H = CASE_H - 0.125;
+  const DOOR_W = 19.0625, DRAWER_W = 26.625;
+
+  // left door: pivot at outer back edge
+  const leftPivot = new THREE.Group();
+  leftPivot.position.set(-W / 2, Y0, ZF);
+  scene.add(leftPivot);
+  const leftDoor = slatFront({ w: DOOR_W, h: FRONT_H, pullX: DOOR_W - 6 });
+  leftPivot.add(leftDoor);
+
+  const rightPivot = new THREE.Group();
+  rightPivot.position.set(W / 2, Y0, ZF);
+  scene.add(rightPivot);
+  const rightDoor = slatFront({ w: DOOR_W, h: FRONT_H, pullX: 6 });
+  rightDoor.position.x = -DOOR_W;
+  rightPivot.add(rightDoor);
+
+  // drawer: full-height slatted front over a short birch box below the soundbar shelf
+  const drawer = new THREE.Group();
+  scene.add(drawer);
+  const drawerFront = slatFront({ w: DRAWER_W, h: FRONT_H, pullX: DRAWER_W / 2 });
+  drawerFront.position.set(-DRAWER_W / 2, Y0, ZF);
+  drawer.add(drawerFront);
+  const BX_W = 25.625, BX_H = 11, BX_L = 15, bt = 0.5;
+  const bxY = Y0 + T + 0.6;
+  const bxZ0 = ZF - BX_L; // back of box
+  box(bt, BX_H, BX_L, M.birch, -BX_W / 2 + bt / 2, bxY + BX_H / 2, bxZ0 + BX_L / 2, drawer);
+  box(bt, BX_H, BX_L, M.birch, BX_W / 2 - bt / 2, bxY + BX_H / 2, bxZ0 + BX_L / 2, drawer);
+  box(BX_W - 2 * bt, BX_H, bt, M.birch, 0, bxY + BX_H / 2, bxZ0 + bt / 2, drawer);
+  box(BX_W - 2 * bt, BX_H, bt, M.black, 0, bxY + BX_H / 2, ZF - bt / 2 - 0.05, drawer);
+  box(BX_W - 2 * bt, 0.25, BX_L - 2 * bt, M.birch, 0, bxY + 0.5, bxZ0 + BX_L / 2, drawer);
+  // a couple of controllers in the drawer
+  box(6, 2.4, 4.2, M.gearDark, -6, bxY + 0.62 + 1.2, bxZ0 + 9, drawer);
+  box(6, 2.4, 4.2, M.gearDark, 3, bxY + 0.62 + 1.2, bxZ0 + 9.5, drawer);
+  box(8, 0.8, 2, M.gear, 8, bxY + 0.62 + 0.4, bxZ0 + 4, drawer);
+
+  const totalSlats = leftDoor.userData.slats + rightDoor.userData.slats + drawerFront.userData.slats;
+  console.log('slats', totalSlats);
+
+  // ---------- state + animation ----------
+  const state = { doors: 0, drawer: 0, back: 0, led: 0 };
+  const target = { doors: 0, drawer: 0, back: 0, led: 0 };
+
+  function applyState() {
+    const e = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    const d = e(state.doors);
+    leftPivot.rotation.y = -105 * D * d;
+    rightPivot.rotation.y = 105 * D * d;
+    drawer.position.z = 14.5 * e(state.drawer);
+    const bk = e(state.back);
+    backPanels.position.set(0, 0.3 * Math.min(1, bk * 4), -14 * bk);
+    backPanels.visible = state.back < 0.999;
+    const l = state.led;
+    M.led.emissiveIntensity = 2.2 * l;
+    ledLights.forEach(p => { p.intensity = 1.6 * l; });
+  }
+
+  function statusText() {
+    const on = [];
+    if (target.doors) on.push('Doors open');
+    if (target.drawer) on.push('Drawer open');
+    if (target.back) on.push('Back panels off');
+    if (target.led) on.push('Plinth light on');
+    return on.length ? on.join(' · ') : 'Closed';
+  }
+
+  // camera views
+  const VIEWS = {
+    threeq: { p: [78, 44, 104], t: [0, 13, 0] },
+    front:  { p: [0, 16, 128], t: [0, 14, 0] },
+    side:   { p: [128, 18, 6], t: [0, 14, 0] },
+    top:    { p: [0, 132, 34], t: [0, 12, 2] },
+    back:   { p: [-72, 40, -96], t: [0, 13, 0] },
+    low:    { p: [-62, 12, 70], t: [0, 12, 2] }
+  };
+  let camAnim = null;
+  function goView(name) {
+    const v = VIEWS[name];
+    if (!v) return;
+    // show back of case: move wall away when viewing from behind
+    wall.visible = name !== 'back';
+    const p1 = new THREE.Vector3(...v.p), t1 = new THREE.Vector3(...v.t);
+    if (reduceMotion) {
+      camera.position.copy(p1); controls.target.copy(t1); controls.update(); return;
+    }
+    camAnim = { p0: camera.position.clone(), t0: controls.target.clone(), p1, t1, start: performance.now(), dur: 700 };
+  }
+
+  // UI wiring
+  document.getElementById('views').addEventListener('click', e => {
+    const btn = e.target.closest('button[data-view]');
+    if (!btn) return;
+    document.querySelectorAll('#views button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+    goView(btn.dataset.view);
+  });
+  function syncStateButtons() {
+    document.querySelectorAll('#states button[data-state]').forEach(b => {
+      b.setAttribute('aria-pressed', String(!!target[b.dataset.state]));
+    });
+    const allOpen = target.doors && target.drawer && target.back;
+    document.getElementById('s-all').setAttribute('aria-pressed', String(!!allOpen));
+    document.getElementById('s-close').setAttribute('aria-pressed', 'false');
+    statusEl.textContent = statusText();
+    if (reduceMotion) { Object.assign(state, target); applyState(); }
+  }
+  document.getElementById('states').addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    if (btn.dataset.state) {
+      const k = btn.dataset.state;
+      target[k] = target[k] ? 0 : 1;
+      if (k === 'back' && target.back) {
+        document.querySelectorAll('#views button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === 'back')));
+        goView('back');
+      }
+    } else if (btn.dataset.preset === 'all') {
+      target.doors = target.drawer = target.back = 1;
+    } else if (btn.dataset.preset === 'close') {
+      target.doors = target.drawer = target.back = 0;
+    }
+    syncStateButtons();
+  });
+
+  // sizing
+  function resize() {
+    const r = viewerEl.getBoundingClientRect();
+    const w = Math.max(1, r.width), h = Math.max(1, r.height);
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(viewerEl);
+  resize();
+
+  let last = performance.now();
+  function tick(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    if (!reduceMotion) {
+      const speed = 1.6;
+      for (const k of Object.keys(state)) {
+        const diff = target[k] - state[k];
+        if (Math.abs(diff) > 0.0005) state[k] += Math.sign(diff) * Math.min(Math.abs(diff), dt * speed);
+        else state[k] = target[k];
+      }
+      applyState();
+    }
+    if (camAnim) {
+      const k = Math.min(1, (now - camAnim.start) / camAnim.dur);
+      const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+      camera.position.lerpVectors(camAnim.p0, camAnim.p1, e);
+      controls.target.lerpVectors(camAnim.t0, camAnim.t1, e);
+      if (k >= 1) camAnim = null;
+    }
+    controls.update();
+    renderer.render(scene, camera);
+    requestAnimationFrame(tick);
+  }
+  applyState();
+  requestAnimationFrame(tick);
+})();
+</script>
+
+</html>
